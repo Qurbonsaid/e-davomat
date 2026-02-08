@@ -8,7 +8,6 @@ export interface Branch {
 export interface Department {
   _id: string;
   branch?: Branch;
-  branch_id?: string;
   name: string;
   createdAt: string;
 }
@@ -18,7 +17,7 @@ export interface AuthorizedDevice {
   serialNumber: string;
   name?: string;
   ipAddress?: string;
-  branch?: string;
+  branch?: Branch;
   isActive: boolean;
   createdAt: string;
 }

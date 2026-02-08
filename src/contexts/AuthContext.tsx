@@ -10,6 +10,7 @@ import { api } from "../services/api";
 
 interface AuthContextType {
   user: User | null;
+  setUser: (user: User) => void;
   isLoading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

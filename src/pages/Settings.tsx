@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 import {
   Shift,
   Branch,
@@ -17,6 +18,7 @@ import {
   Pencil,
   Trash2,
   X,
+  UserCog,
 } from "lucide-react";
 
 type SettingsTab =
@@ -24,7 +26,8 @@ type SettingsTab =
   | "branches"
   | "departments"
   | "positions"
-  | "devices";
+  | "devices"
+  | "profile";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("shifts");
@@ -35,6 +38,7 @@ export default function Settings() {
     { id: "departments" as const, label: "Bo'limlar", icon: Users },
     { id: "positions" as const, label: "Lavozimlar", icon: Briefcase },
     { id: "devices" as const, label: "Qurilmalar", icon: Fingerprint },
+    { id: "profile" as const, label: "Profil", icon: UserCog },
   ];
 
   return (
@@ -70,6 +74,7 @@ export default function Settings() {
           {activeTab === "departments" && <DepartmentsSettings />}
           {activeTab === "positions" && <PositionsSettings />}
           {activeTab === "devices" && <DevicesSettings />}
+          {activeTab === "profile" && <ProfileSettings />}
         </div>
       </div>
     </div>
@@ -466,7 +471,7 @@ function DepartmentsSettings() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDep, setEditingDep] = useState<Department | null>(null);
-  const [formData, setFormData] = useState({ name: "", branch_id: "" });
+  const [formData, setFormData] = useState({ name: "", branch: "" });
 
   useEffect(() => {
     loadData();
@@ -488,10 +493,10 @@ function DepartmentsSettings() {
   const openModal = (dep?: Department) => {
     if (dep) {
       setEditingDep(dep);
-      setFormData({ name: dep.name, branch_id: dep.branch_id || "" });
+      setFormData({ name: dep.name, branch: dep.branch?._id || "" });
     } else {
       setEditingDep(null);
-      setFormData({ name: "", branch_id: "" });
+      setFormData({ name: "", branch: "" });
     }
     setIsModalOpen(true);
   };
@@ -522,11 +527,6 @@ function DepartmentsSettings() {
     }
   };
 
-  const getBranchName = (branchId?: string) => {
-    const branch = branches.find((b) => b._id === branchId);
-    return branch?.name || "-";
-  };
-
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -548,9 +548,7 @@ function DepartmentsSettings() {
           >
             <div>
               <p className="font-medium text-gray-900">{dep.name}</p>
-              <p className="text-sm text-gray-500">
-                {getBranchName(dep.branch_id)}
-              </p>
+              <p className="text-sm text-gray-500">{dep.branch?.name || "-"}</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -605,9 +603,9 @@ function DepartmentsSettings() {
                   Filial
                 </label>
                 <select
-                  value={formData.branch_id}
+                  value={formData.branch}
                   onChange={(e) =>
-                    setFormData({ ...formData, branch_id: e.target.value })
+                    setFormData({ ...formData, branch: e.target.value })
                   }
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
                 >
@@ -830,7 +828,7 @@ function DevicesSettings() {
         serialNumber: device.serialNumber,
         name: device.name || "",
         ipAddress: device.ipAddress || "",
-        branch: device.branch || "",
+        branch: device.branch?._id || "",
         isActive: device.isActive,
       });
     } else {
@@ -850,9 +848,14 @@ function DevicesSettings() {
     e.preventDefault();
     try {
       if (editingDevice) {
-        await api.updateDevice(editingDevice._id, formData);
+        await api.updateDevice(
+          editingDevice._id,
+          formData as unknown as Partial<AuthorizedDevice>,
+        );
       } else {
-        await api.createDevice(formData);
+        await api.createDevice(
+          formData as unknown as Partial<AuthorizedDevice>,
+        );
       }
       setIsModalOpen(false);
       loadData();
@@ -870,11 +873,6 @@ function DevicesSettings() {
         console.error("Qurilmani o'chirishda xatolik:", error);
       }
     }
-  };
-
-  const getBranchName = (branchId?: string) => {
-    const branch = branches.find((b) => b._id === branchId);
-    return branch?.name || "-";
   };
 
   return (
@@ -905,7 +903,7 @@ function DevicesSettings() {
                   {device.name || device.serialNumber}
                 </p>
                 <p className="text-sm text-gray-500">
-                  {device.ipAddress || "IP yo'q"} • {getBranchName(device.branch)}
+                  {device.ipAddress || "IP yo'q"} • {device.branch?.name || "-"}
                 </p>
               </div>
             </div>
@@ -1039,6 +1037,183 @@ function DevicesSettings() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Profile Settings
+function ProfileSettings() {
+  const { user, setUser } = useAuth();
+  const [fullName, setFullName] = useState(user?.fullName || "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleUpdateName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    setIsSaving(true);
+    try {
+      const result = await api.updateProfile({ fullName });
+      setUser(result.user);
+      setMessage({ type: "success", text: "Ism muvaffaqiyatli yangilandi" });
+    } catch {
+      setMessage({
+        type: "error",
+        text: "Ismni yangilashda xatolik yuz berdi",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: "error", text: "Yangi parollar mos kelmaydi" });
+      return;
+    }
+    if (newPassword.length < 4) {
+      setMessage({
+        type: "error",
+        text: "Parol kamida 4 ta belgidan iborat bo'lishi kerak",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await api.updateProfile({ currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage({
+        type: "success",
+        text: "Parol muvaffaqiyatli yangilandi",
+      });
+    } catch {
+      setMessage({
+        type: "error",
+        text: "Joriy parol noto'g'ri yoki xatolik yuz berdi",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-lg space-y-8">
+      {message && (
+        <div
+          className={`px-4 py-3 rounded-lg text-sm ${
+            message.type === "success"
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
+      {/* Update Full Name */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Ism-familiyani o'zgartirish
+        </h3>
+        <form onSubmit={handleUpdateName} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Foydalanuvchi nomi
+            </label>
+            <input
+              type="text"
+              value={user?.username || ""}
+              disabled
+              className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-500 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              To'liq ism
+            </label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          >
+            Saqlash
+          </button>
+        </form>
+      </div>
+
+      <hr />
+
+      {/* Update Password */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Parolni o'zgartirish
+        </h3>
+        <form onSubmit={handleUpdatePassword} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Joriy parol
+            </label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Yangi parol
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Yangi parolni tasdiqlang
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          >
+            Parolni yangilash
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

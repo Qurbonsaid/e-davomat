@@ -77,7 +77,49 @@ export default function Reports() {
       department_id: filterDepartment || undefined,
       branch_id: filterBranch || undefined,
     });
-    window.open(url, "_blank");
+    const token = localStorage.getItem("token");
+    // Fetch with auth token since the endpoint requires authentication
+    fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.blob())
+      .then((blob) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `hisobot_${startDate}_${endDate}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      })
+      .catch((err) => console.error("Excel yuklashda xatolik:", err));
+  };
+
+  const downloadCSV = () => {
+    let csvContent = "";
+    if (reportType === "summary" && summaryReport.length > 0) {
+      csvContent =
+        "Ism,Bo'lim,Lavozim,Smena,Kelgan kunlar,Kechikishlar,Jami kechikish (daq)\n";
+      for (const row of summaryReport) {
+        csvContent += `"${row.first_name} ${row.last_name}","${row.department_name || "-"}","${row.position_name || "-"}","${row.shift_name || "-"}",${row.days_present},${row.late_count},${row.total_late_minutes}\n`;
+      }
+    } else if (reportType === "detailed" && detailedReport.length > 0) {
+      csvContent = "Ism,Sana,Kelish,Ketish,Holat,Kechikish (daq)\n";
+      for (const row of detailedReport) {
+        const status = row.status === "late" ? "Kechikkan" : "O'z vaqtida";
+        csvContent += `"${row.first_name} ${row.last_name}","${row.date}","${row.clock_in || "-"}","${row.clock_out || "-"}","${status}",${row.late_minutes}\n`;
+      }
+    } else {
+      return;
+    }
+
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `hisobot_${startDate}_${endDate}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   };
 
   // Calculate summary statistics
@@ -247,13 +289,22 @@ export default function Reports() {
             <h2 className="text-lg font-semibold text-gray-900">
               {reportType === "summary" ? "Umumiy hisobot" : "Batafsil hisobot"}
             </h2>
-            <button
-              onClick={downloadExcel}
-              className="inline-flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-            >
-              <Download className="w-5 h-5" />
-              Excel yuklash
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={downloadCSV}
+                className="inline-flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              >
+                <Download className="w-5 h-5" />
+                CSV
+              </button>
+              <button
+                onClick={downloadExcel}
+                className="inline-flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              >
+                <FileSpreadsheet className="w-5 h-5" />
+                Excel
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">

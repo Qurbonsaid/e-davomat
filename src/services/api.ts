@@ -69,6 +69,17 @@ export const api = {
     return fetchWithAuth("/auth/me");
   },
 
+  async updateProfile(data: {
+    fullName?: string;
+    currentPassword?: string;
+    newPassword?: string;
+  }): Promise<{ user: User }> {
+    return fetchWithAuth("/auth/profile", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
   // Dashboard
   async getDashboardStats(date?: string): Promise<DashboardStats> {
     const params = date ? `?date=${date}` : "";
@@ -206,9 +217,10 @@ export const api = {
     return fetchWithAuth(`/departments${query}`);
   },
 
-  async createDepartment(
-    data: Partial<Department> & { branch_id?: string },
-  ): Promise<Department> {
+  async createDepartment(data: {
+    name: string;
+    branch?: string;
+  }): Promise<Department> {
     return fetchWithAuth("/departments", {
       method: "POST",
       body: JSON.stringify(data),
@@ -217,7 +229,7 @@ export const api = {
 
   async updateDepartment(
     id: string,
-    data: Partial<Department> & { branch_id?: string },
+    data: { name: string; branch?: string },
   ): Promise<void> {
     return fetchWithAuth(`/departments/${id}`, {
       method: "PUT",
