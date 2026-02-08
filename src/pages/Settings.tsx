@@ -139,6 +139,7 @@ function ShiftsSettings() {
       loadShifts();
     } catch (error) {
       console.error("Smenani saqlashda xatolik:", error);
+      alert("Smenani saqlashda xatolik yuz berdi");
     }
   };
 
@@ -149,6 +150,7 @@ function ShiftsSettings() {
         loadShifts();
       } catch (error) {
         console.error("Smenani o'chirishda xatolik:", error);
+        alert("Smenani o'chirishda xatolik yuz berdi");
       }
     }
   };
@@ -341,6 +343,7 @@ function BranchesSettings() {
       loadBranches();
     } catch (error) {
       console.error("Filialni saqlashda xatolik:", error);
+      alert("Filialni saqlashda xatolik yuz berdi");
     }
   };
 
@@ -351,6 +354,7 @@ function BranchesSettings() {
         loadBranches();
       } catch (error) {
         console.error("Filialni o'chirishda xatolik:", error);
+        alert("Filialni o'chirishda xatolik yuz berdi");
       }
     }
   };
@@ -513,6 +517,7 @@ function DepartmentsSettings() {
       loadData();
     } catch (error) {
       console.error("Bo'limni saqlashda xatolik:", error);
+      alert("Bo'limni saqlashda xatolik yuz berdi");
     }
   };
 
@@ -523,6 +528,7 @@ function DepartmentsSettings() {
         loadData();
       } catch (error) {
         console.error("Bo'limni o'chirishda xatolik:", error);
+        alert("Bo'limni o'chirishda xatolik yuz berdi");
       }
     }
   };
@@ -683,6 +689,7 @@ function PositionsSettings() {
       loadPositions();
     } catch (error) {
       console.error("Lavozimni saqlashda xatolik:", error);
+      alert("Lavozimni saqlashda xatolik yuz berdi");
     }
   };
 
@@ -693,6 +700,7 @@ function PositionsSettings() {
         loadPositions();
       } catch (error) {
         console.error("Lavozimni o'chirishda xatolik:", error);
+        alert("Lavozimni o'chirishda xatolik yuz berdi");
       }
     }
   };
@@ -861,6 +869,7 @@ function DevicesSettings() {
       loadData();
     } catch (error) {
       console.error("Qurilmani saqlashda xatolik:", error);
+      alert("Qurilmani saqlashda xatolik yuz berdi");
     }
   };
 
@@ -871,6 +880,7 @@ function DevicesSettings() {
         loadData();
       } catch (error) {
         console.error("Qurilmani o'chirishda xatolik:", error);
+        alert("Qurilmani o'chirishda xatolik yuz berdi");
       }
     }
   };

@@ -9,7 +9,6 @@ import {
 import { format, subDays } from "date-fns";
 import {
   FileSpreadsheet,
-  Download,
   Calendar,
   ChevronDown,
   BarChart3,
@@ -91,35 +90,6 @@ export default function Reports() {
         URL.revokeObjectURL(a.href);
       })
       .catch((err) => console.error("Excel yuklashda xatolik:", err));
-  };
-
-  const downloadCSV = () => {
-    let csvContent = "";
-    if (reportType === "summary" && summaryReport.length > 0) {
-      csvContent =
-        "Ism,Bo'lim,Lavozim,Smena,Kelgan kunlar,Kechikishlar,Jami kechikish (daq)\n";
-      for (const row of summaryReport) {
-        csvContent += `"${row.first_name} ${row.last_name}","${row.department_name || "-"}","${row.position_name || "-"}","${row.shift_name || "-"}",${row.days_present},${row.late_count},${row.total_late_minutes}\n`;
-      }
-    } else if (reportType === "detailed" && detailedReport.length > 0) {
-      csvContent = "Ism,Sana,Kelish,Ketish,Holat,Kechikish (daq)\n";
-      for (const row of detailedReport) {
-        const status = row.status === "late" ? "Kechikkan" : "O'z vaqtida";
-        csvContent += `"${row.first_name} ${row.last_name}","${row.date}","${row.clock_in || "-"}","${row.clock_out || "-"}","${status}",${row.late_minutes}\n`;
-      }
-    } else {
-      return;
-    }
-
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `hisobot_${startDate}_${endDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
   };
 
   // Calculate summary statistics
@@ -291,18 +261,11 @@ export default function Reports() {
             </h2>
             <div className="flex items-center gap-2">
               <button
-                onClick={downloadCSV}
-                className="inline-flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-              >
-                <Download className="w-5 h-5" />
-                CSV
-              </button>
-              <button
                 onClick={downloadExcel}
                 className="inline-flex items-center gap-2 px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               >
                 <FileSpreadsheet className="w-5 h-5" />
-                Excel
+                Excel yuklash
               </button>
             </div>
           </div>
